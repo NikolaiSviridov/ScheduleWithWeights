@@ -3,18 +3,35 @@ package jb.intership;
 import javafx.util.Pair;
 
 import java.util.*;
-
+/**
+ * The ScheduleWithWeights class solves weighted intervals scheduling problem.
+ * Complexity O(n*log(n))
+*/
 public class ScheduleWithWeights {
-    private ArrayList<Job> jobs;
+    /**
+     * Jobs/Intervals container
+     */
+    private ArrayList<Job> jobs = new ArrayList<>();
 
-    ScheduleWithWeights() {
-        jobs = new ArrayList<>();
+    /**
+     * Add new Job to schedule.
+     * @param id identifier of job/interval
+     * @param startTime start of job/interval
+     * @param finishTime finish of job/interval
+     * @param weight weight of job/interval
+     */
+    public void addJob(int id, int startTime, int finishTime, int weight) {
+        jobs.add(new Job(id, startTime, finishTime, weight));
     }
 
-    public void addJob(int id, int start_time, int finish_time, int weight) {
-        jobs.add(new Job(id, start_time, finish_time, weight));
-    }
-
+    /**
+     * Solve problem and return pair of maximum income and sequence of jobs identifiers.
+     * Complexity(n*log(n))
+     * Firstly it sorts jobs/intervals by finishTime in ASC order O(n*log(n)). Then it uses
+     * dynamic programming with binary search to find maximum income which is stored in the
+     * local array dp[jobs.size() - 1] O(n*log(n)).
+     * @return pair of maximum income (Integer) and sequence of jobs identifiers (ArrayList<Integer>)
+     */
     public Pair<Integer, ArrayList<Integer>> maxIncomeAndSequence() {
         if (jobs.isEmpty()) {
             return new Pair<>(0, null);
@@ -38,6 +55,14 @@ public class ScheduleWithWeights {
         return new Pair<>(dp[jobs.size() - 1], findSequence(dp));
     }
 
+    /**
+     * Binary search for finding the latest non overlapping job/interval
+     * for current job/interval.
+     * Complexity O(log(n))
+     * @param index index of current job/interval
+     * @return index of the latest non overlapping job/interval for current job/interval,
+     * if nothing found returns -1
+     */
     private int bsFindJob(int index) {
         int l = 0;
         int r = index - 1;
@@ -57,20 +82,30 @@ public class ScheduleWithWeights {
         return -1;
     }
 
+    /**
+     * Find sequence of jobs identifiers for maximum income by using
+     * the filled array from dynamic programming step.
+     * Complexity O(n*log(n))
+     * Start from the end of array. Find the latest non overlapping job/interval by using
+     * binary search. Then check if job/interval was included in solution and change the current index
+     * depending on this. Repeat until the index is out of range.
+     * @param dp the filled array from dynamic programming step
+     * @return sequence of jobs identifiers for maximum income
+     */
     private ArrayList<Integer> findSequence(int[] dp) {
         ArrayList<Integer> resultIndexes = new ArrayList<>();
-        int i = jobs.size() - 1;
+        int currIndex = jobs.size() - 1;
 
-        while (i > -1) {
-            int index = bsFindJob(i);
-            int wFound = (index == -1) ? 0 : dp[index];
-            int wWithout = (i - 1 == -1) ? 0 : dp[i - 1];
+        while (currIndex > -1) {
+            int indexLatestJob = bsFindJob(currIndex);
+            int wFound = (indexLatestJob == -1) ? 0 : dp[indexLatestJob];
+            int wWithout = (currIndex - 1 == -1) ? 0 : dp[currIndex - 1];
 
-            if (jobs.get(i).weight + wFound > wWithout) {
-                resultIndexes.add(i);
-                i = index;
+            if (jobs.get(currIndex).weight + wFound > wWithout) {
+                resultIndexes.add(currIndex);
+                currIndex = indexLatestJob;
             } else {
-                i--;
+                currIndex--;
             }
         }
 
@@ -82,6 +117,9 @@ public class ScheduleWithWeights {
         return result;
     }
 
+    /**
+     * Nested class for storing all parameters of jobs/intervals
+     */
     private static final class Job {
         final public int id;
         public final int startTime;
@@ -96,6 +134,10 @@ public class ScheduleWithWeights {
         }
     }
 
+    /**
+     * Class Comparator for nested class Job.
+     * Compares finishTime values in ASC order (<)
+     */
     private static class JobComparator implements Comparator<Job> {
         @Override
         public int compare(Job lhs, Job rhs) {
